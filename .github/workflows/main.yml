@@ -7,7 +7,8 @@ on:
     branches: [ main ]
 
 env:
-  DOCKER_IMAGE: ghcr.io/${{ github.repository }}
+  # Convert repository name to lowercase
+  DOCKER_IMAGE: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
   DIGITAL_OCEAN_HOST: ${{ secrets.DIGITAL_OCEAN_HOST }}
 
 jobs:
@@ -48,12 +49,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           
+      - name: Convert to lowercase
+        run: |
+          echo "REPO_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ env.DOCKER_IMAGE }}:${{ github.sha }},${{ env.DOCKER_IMAGE }}:latest
+          tags: ghcr.io/${{ env.REPO_NAME }}:${{ github.sha }},ghcr.io/${{ env.REPO_NAME }}:latest
           
   deploy:
     needs: docker-build-and-push
